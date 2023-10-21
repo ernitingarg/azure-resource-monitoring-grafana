@@ -1,0 +1,72 @@
+active_directory_authority_url: "https://login.microsoftonline.com/"
+resource_manager_url: "https://management.azure.com/"
+credentials:
+  subscription_id: sample_subscription_id
+  client_id: sample_client_id
+  client_secret: sample_client_secret
+  tenant_id: sample_tenant_id
+
+# Gets the metrics for all the resources of a specific type with-in a given resource group.
+resource_groups:
+
+  - resource_group: "sample_rg"
+    resource_types:
+    - "Microsoft.Cdn/profiles" # FrontDoor [The metrics are related to "standard" plan]
+    metrics:
+      - name: "RequestCount"
+      - name: "RequestSize"
+      - name: "ResponseSize"
+      - name: "TotalLatency"
+      - name: "WebApplicationFirewallRequestCount"
+      - name: "OriginHealthPercentage"
+      - name: "OriginRequestCount"
+      - name: "OriginLatency"
+
+  - resource_group: "sample_rg"
+    resource_types:
+    - "Microsoft.Sql/servers/databases" # SQL DB
+    metrics:
+      - name: "storage_percent"
+      - name: "cpu_percent"
+      - name: "connection_successful"
+      - name: "connection_failed"
+      - name: "blocked_by_firewall"
+      - name: "deadlock"
+      - name: "dtu_consumption_percent"
+
+  - resource_group: "sample_rg"
+    resource_types:
+    - "Microsoft.Web/serverfarms" # Azure App Service Plan
+    metrics:
+      - name: "CpuPercentage"
+      - name: "MemoryPercentage"
+      - name: "DiskQueueLength"
+      - name: "HttpQueueLength"
+
+  - resource_group: "sample_rg"
+    resource_types:
+    - "Microsoft.Web/sites" # Azure App Service/ Azure Function App
+    metrics:
+      - name: "Requests"
+      - name: "RequestsInApplicationQueue"
+      - name: "Http401"
+      - name: "Http403"
+      - name: "Http404"
+      - name: "Http406"
+
+  - resource_group: "sample_rg"
+    resource_types:
+    - "Microsoft.Cache/Redis" # Azure Redis Cache
+    metrics:
+      - name: "percentProcessorTime"
+      - name: "usedmemorypercentage"
+      - name: "serverLoad"
+      - name: "cacheLatency"
+      - name: "cachehits"
+      - name: "cachemisses"
+      - name: "errors"
+      - name: "totalkeys"
+      - name: "evictedkeys"
+      - name: "expiredkeys"
+      - name: "getcommands"
+      - name: "setcommands"

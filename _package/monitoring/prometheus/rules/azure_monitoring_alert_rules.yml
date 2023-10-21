@@ -1,0 +1,298 @@
+groups:
+  - name: Azure front door api alert rules
+    rules:
+      - alert: TooManyFrontDoorAPIRequests
+        expr: sum_over_time(requestcount_count_total[1m]) > 1000
+        labels:
+          severity: "warning"
+        annotations:
+          summary: "Too many (>1000) FrontDoor api requests."
+          description: "Total *{{$value}}* requests have been received by FrontDoor in last 1 min."
+
+      - alert: LargeRequestSizeReceivedByFrontend
+        expr: max_over_time(requestsize_bytes_max[5m]) / 1024 > 200
+        labels:
+          severity: "warning"
+        annotations:
+          summary: "Request size is larger than 200 KB."
+          description: "Total *{{$value}} KB* request size has been received by frontend in last 5 mins."
+
+      - alert: LargeResponseSizeSentByFrontend
+        expr: max_over_time(responsesize_bytes_max[5m]) / 1024 > 200
+        labels:
+          severity: "warning"
+        annotations:
+          summary: "Response size is larger than 200 KB."
+          description: "Total *{{$value}} KB* Response size has been sent by frontend in last 5 mins."
+
+      - alert: FrontendHighTotalLatency
+        expr: avg_over_time(totallatency_milliseconds_average[1m])/1000 > 1
+        for: 3m
+        labels:
+          severity: "warning"
+        annotations:
+          summary: "Frontend total latency is more than 1s."
+          description: "Frontend took more than 1s to complete in last 1 min, current value = *{{$value}}s*."
+
+      - alert: FrontendHighBackendLatency
+        expr: avg_over_time(originlatency_milliseconds_average[1m])/1000 > 1
+        for: 3m
+        labels:
+          severity: "warning"
+        annotations:
+          summary: "Frontend backend latency is more than 1s."
+          description: "Frontend backend took more than 1s to complete in last 1 min, current value = *{{$value}}s*."
+
+  - name: Azure app service plan alert rules
+    rules:
+      - alert: HighMemoryUsed
+        expr: memorypercentage_percent_max > 75
+        for: 3m
+        labels:
+          severity: "warning"
+        annotations:
+          summary: "High amount of memory is used by the app service instance."
+          description: "Current Memory used is > 75%, current value = *{{$value}}%*"
+
+      - alert: VeryHighMemoryUsed
+        expr: memorypercentage_percent_max > 90
+        for: 3m
+        labels:
+          severity: "critical"
+        annotations:
+          summary: "Very high amount of memory is used by the app service instance."
+          description: "Current Memory used is > 90%, current value = *{{$value}}%*"
+
+      - alert: HighCPULoad
+        expr: cpupercentage_percent_max > 75
+        for: 3m
+        labels:
+          severity: "warning"
+        annotations:
+          summary: "High CPU load."
+          description: "CPU load is > 75%, current value = *{{$value}}%*."
+
+      - alert: VeryHighCPULoad
+        expr: cpupercentage_percent_max > 90
+        for: 3m
+        labels:
+          severity: "critical"
+        annotations:
+          summary: "Very High CPU load."
+          description: "CPU load is > 90%, current value = *{{$value}}%*."
+
+  - name: Azure app service instance or Azure function instance alert rules
+    rules:
+      - alert: TooManyBackendAPIRequests
+        expr: sum_over_time(requests_count_total[1m]) > 1000
+        labels:
+          severity: "warning"
+        annotations:
+          summary: "Too many (>1000) Backend api requests."
+          description: "Total *{{$value}}* requests have been received by Backend API in last 1 min."
+
+      - alert: Http4xxRequestResultingInError
+        expr: (sum_over_time(http401_count_total[24h]) + sum_over_time(http403_count_total[24h]) + sum_over_time(http406_count_total[24h])) > 0
+        labels:
+          severity: "warning"
+        annotations:
+          summary: "http4xx requests resulting in error."
+          description: "Total *{{$value}}* http4xx requests resulting in error in last 24 hours."
+
+      - alert: PendingRequestsInQueue
+        expr: sum_over_time(requestsinapplicationqueue_count_total[1m]) > 0
+        for: 3m
+        labels:
+          severity: "warning"
+        annotations:
+          summary: "Few requests are in application queue."
+          description: "Total *{{$value}}* requests are in application queue for the last 1 min."
+
+  - name: Azure sql database alert rules
+    rules:
+      - alert: SqlServerDeadlock
+        expr: increase(deadlock_count_total{sub_resource_name!="master"}[1m]) > 0
+        labels:
+          severity: "warning"
+        annotations:
+          summary: "SQL Server deadlock"
+          description: "SQL Server is having some deadlock for last 1 min. Deadlock count = *{{$value}}*."
+
+      - alert: TooManySqlServerDbConnections
+        expr: sum_over_time(connection_successful_count_total{sub_resource_name!="master"}[1m]) > 10
+        labels:
+          severity: "warning"
+        annotations:
+          summary: "More than 10 db connections opened."
+          description: "Total *{{$value}}* db connections have been opened in last 1 min."
+
+      - alert: SqlServerTotalFailedDbConnections
+        expr: sum_over_time(connection_failed_count_total{sub_resource_name!="master"}[1m]) > 10
+        labels:
+          severity: "warning"
+        annotations:
+          summary: "More than 10 db connections failed."
+          description: "Total *{{$value}}* db connections have been failed in last 1 min."
+
+      - alert: SqlServerTotalFirewallBlockedConnections
+        expr: sum_over_time(blocked_by_firewall_count_total{sub_resource_name!="master"}[1m]) > 10
+        labels:
+          severity: "warning"
+        annotations:
+          summary: "More than 10 db connections blocked by firewall."
+          description: "Total *{{$value}}* connections have been blocked by firewall in last 1 min."
+
+      - alert: SqlServerDataSpaceHighUsage
+        expr: storage_percent_percent_max{sub_resource_name!="master"} > 75
+        labels:
+          severity: "warning"
+        annotations:
+          summary: "Data space used is more than 75%."
+          description: 'Data space used is more than 75%", current value = *{{$value}}%*.'
+
+      - alert: SqlServerDataSpaceVeryHighUsage
+        expr: storage_percent_percent_max{sub_resource_name!="master"} > 90
+        labels:
+          severity: "critical"
+        annotations:
+          summary: "Data space used is more than 90%."
+          description: 'Data space used is more than 90%", current value = *{{$value}}%*.'
+
+      - alert: SqlServerHighDTUConsumption
+        expr: dtu_consumption_percent_percent_max{sub_resource_name!="master"} > 75
+        labels:
+          severity: "warning"
+        annotations:
+          summary: "DTU consumption is more than 75%."
+          description: "DTU consumption is more than 75%, current value = *{{$value}}%*."
+
+      - alert: SqlServerVeryHighDTUConsumption
+        expr: dtu_consumption_percent_percent_max{sub_resource_name!="master"} > 90
+        labels:
+          severity: "critical"
+        annotations:
+          summary: "DTU consumption is more than 90%."
+          description: "DTU consumption is more than 90%, current value = *{{$value}}%*."
+
+      - alert: SqlServerHighCPUUsage
+        expr: cpu_percent_percent_max{sub_resource_name!="master"} > 75
+        labels:
+          severity: "warning"
+        annotations:
+          summary: "CPU usage more than 75%."
+          description: "CPU usage is more than 75%, current value = *{{$value}}%*."
+
+      - alert: SqlServerVeryHighCPUUsage
+        expr: cpu_percent_percent_max{sub_resource_name!="master"} > 90
+        labels:
+          severity: "critical"
+        annotations:
+          summary: "CPU usage more than 90%."
+          description: "CPU usage is more than 90%, current value = *{{$value}}%*."
+
+  - name: Azure redis cache alert rules
+    rules:
+      - alert: ErrorOccuredAtCacheServer
+        expr: sum_over_time(errors_count_total[1m]) > 0
+        labels:
+          severity: "warning"
+        annotations:
+          summary: "There are few errors at cache server."
+          description: "Total *{{$value}}* errors have occured at cache server in last 1 min."
+
+      - alert: HighCacheLatency
+        expr: avg_over_time(cachelatency_count_average[1m])/1000 > 10
+        for: 3m
+        labels:
+          severity: "warning"
+        annotations:
+          summary: "Average latency of redis cache is more than 10 ms."
+          description: "Redis cache took more than 10 ms in last 1 min, current value = *{{$value}}ms*."
+
+      - alert: HighCacheMemoryUsed
+        expr: usedmemorypercentage_percent_max > 75
+        for: 3m
+        labels:
+          severity: "warning"
+        annotations:
+          summary: "High amount of cache memory is consumed by the cache service."
+          description: "Current Cache Memory consumed is > 75%, current value = *{{$value}}%*"
+
+      - alert: VeryHighCacheMemoryUsed
+        expr: usedmemorypercentage_percent_max > 90
+        for: 3m
+        labels:
+          severity: "critical"
+        annotations:
+          summary: "Very high amount of cache memory is consumed by the cache service."
+          description: "Current Cache Memory consumed is > 90%, current value = *{{$value}}%*"
+
+      - alert: HighCacheCPULoad
+        expr: percentProcessortime_percent_max > 75
+        for: 3m
+        labels:
+          severity: "warning"
+        annotations:
+          summary: "High CPU load."
+          description: "CPU load is > 75%, current value = *{{$value}}%*."
+
+      - alert: VeryHighCacheCPULoad
+        expr: percentProcessortime_percent_max > 90
+        for: 3m
+        labels:
+          severity: "critical"
+        annotations:
+          summary: "Very High CPU load."
+          description: "CPU load is > 90%, current value = *{{$value}}%*."
+
+      - alert: HighCacheServerLoad
+        expr: serverLoad_percent_max > 75
+        for: 3m
+        labels:
+          severity: "warning"
+        annotations:
+          summary: "High server load on cache."
+          description: "Server load is > 75%, current value = *{{$value}}%*."
+
+      - alert: VeryHighCacheServerLoad
+        expr: serverLoad_percent_max > 90
+        for: 3m
+        labels:
+          severity: "critical"
+        annotations:
+          summary: "Very High server load on cache."
+          description: "Server load is > 90%, current value = *{{$value}}%*."
+
+      - alert: RedisCacheStatistics
+        expr: max by(target_env) (totalkeys_count_max) >= 0
+        labels:
+          severity: "info"
+        annotations:
+          summary: "Redis cache current statistics for last 24 hours."
+          description: '```
+            {{- "\n" -}}
+            TotalCurrentKeys:
+            {{ with printf "max by(target_env) (totalkeys_count_max)" | query }}
+            {{ . | first | value }}
+            {{end}}
+            {{- "\n" -}}
+            TotalHitsCountsInLast24Hours:
+            {{ with printf "max by(target_env) (sum_over_time(cachehits_count_total[24h]))" | query }}
+            {{ . | first | value }}
+            {{end}}
+            {{- "\n" -}}
+            TotalMissesCountInLast24Hours:
+            {{ with printf "max by(target_env) (sum_over_time(cachemisses_count_total[24h]))" | query }}
+            {{ . | first | value }}
+            {{end}}
+            {{- "\n" -}}
+            TotalEvictedKeysInLast24Hours:
+            {{ with printf "max by(target_env) (sum_over_time(evictedkeys_count_total[24h]))" | query }}
+            {{ . | first | value }}
+            {{end}}
+            {{- "\n" -}}
+            TotalExpiredKeysInLast24Hours:
+            {{ with printf "max by(target_env) (sum_over_time(expiredkeys_count_total[24h]))" | query }}
+            {{ . | first | value }}
+            {{end}}
+            ```'

@@ -1,0 +1,109 @@
+global:
+  scrape_interval: 30s
+  evaluation_interval: 40s
+  external_labels:
+    monitor: "prom-sample_project"
+
+# Rules and alerts
+rule_files:
+  - "rules/self_monitoring_alert_rules.yml"
+  - "rules/blackbox_alert_rules.yml"
+  - "rules/azure_monitoring_alert_rules"
+
+# Alertmanager configuration
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets: ["alertmanager:9093"]
+          labels:
+            target_env: "production"
+            target_resource_group: "sample_rg"
+            target_resource_name: "sample_monitoring"
+
+# List of scrape configurations
+scrape_configs:
+  # Self monitoring
+  - job_name: "self_monitoring_job"
+    static_configs:
+      - targets: ["prometheus:9090"]
+        labels:
+          target_env: "production"
+          target_resource_group: "sample_rg"
+          target_resource_name: "sample_monitoring"
+
+      - targets: ["alertmanager:9093"]
+        labels:
+          target_env: "production"
+          target_resource_group: "sample_rg"
+          target_resource_name: "sample_monitoring"
+
+      - targets: ["blackbox:9115"]
+        labels:
+          target_env: "production"
+          target_resource_group: "sample_rg"
+          target_resource_name: "sample_monitoring"
+
+      - targets: ["grafana:3000"]
+        labels:
+          target_env: "production"
+          target_resource_group: "sample_rg"
+          target_resource_name: "sample_monitoring"
+
+  # Azure monitoring api target
+  - job_name: "azure_monitoring_api_job"
+    scrape_interval: 60s # with smaller interval, azure monitoring api might endup with timeout
+    static_configs:
+      - targets: ["azure:9276"]
+        labels:
+          target_env: "production"
+          target_resource_group: "sample_rg"
+          target_resource_name: "sample_monitoring"
+
+  # Blackbox https exporter targets
+  - job_name: "blackbox_https_healthcheck_job"
+    metrics_path: /probe
+    params:
+      module: [https_2xx] # Look for a HTTPS 200 response.
+    static_configs:
+      - targets: ['https://1.0.0.5:5000']
+        labels:
+          target_env: 'sample_project'
+          target_resource_group: 'sample_rg'
+          target_resource_name: 'sample_app'
+
+      - targets: ['https://sample_api.com/healthcheck']
+        labels:
+          target_env: 'sample_project'
+          target_resource_group: 'sample_rg'
+          target_resource_name: 'sample_api'
+
+      - targets: ['https://sample_frontdoor.com/healthcheck']
+        labels:
+          target_env: 'sample_project'
+          target_resource_group: 'sample_rg'
+          target_resource_name: 'sample_frontdoor'
+
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__param_target]
+        target_label: instance
+      - target_label: __address__
+        replacement: blackbox:9115
+    scrape_interval: 45s
+
+  # Blackbox http exporter targets
+  - job_name: "blackbox_http_healthcheck_job"
+    metrics_path: /probe
+    params:
+      module: [http_2xx] # Look for a HTTP 200 response.
+    static_configs:
+
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__param_target]
+        target_label: instance
+      - target_label: __address__
+        replacement: blackbox:9115
+    scrape_interval: 45s
