@@ -1,0 +1,77 @@
+version: '3'
+services:
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    volumes:
+      - ${MOUNT_DIR}/monitoring/prometheus:/etc/prometheus
+      - prometheus-storage:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.retention.time=1y'
+    ports:
+      - 9090:9090
+    restart: always
+
+  alertmanager:
+    image: prom/alertmanager:latest
+    container_name: alertmanager
+    volumes:
+      - ${MOUNT_DIR}/monitoring/alertmanager:/etc/alertmanager
+      - alertmanager-storage:/alertmanager
+    command:
+      - '--config.file=/etc/alertmanager/alertmanager.yml'
+    ports:
+      - 9093:9093
+    restart: always
+    depends_on:
+      - prometheus
+
+  blackbox:
+    image: prom/blackbox-exporter:latest
+    container_name: blackbox
+    volumes:
+      - ${MOUNT_DIR}/monitoring/blackbox_exporter:/etc/blackbox_exporter
+      - blackbox-storage:/blackbox
+    command:
+      - '--config.file=/etc/blackbox_exporter/blackbox.yml'
+      - '--history.limit=300'
+      - '--log.level=debug'
+    ports:
+      - 9115:9115
+    restart: always
+    depends_on:
+      - prometheus
+
+  grafana:
+    image: grafana/grafana:8.4.11 # don't change with major release as importation of existing dashboards might not work
+    container_name: grafana
+    volumes:
+      - grafana-storage:/var/lib/grafana
+      - ${MOUNT_DIR}/monitoring/grafana/grafana.env:/etc/grafana/grafana.ini
+      - ${MOUNT_DIR}/monitoring/grafana/provisioning:/etc/grafana/provisioning
+    ports:
+      - 3000:3000
+    restart: always
+    depends_on:
+      - prometheus
+
+  azure:
+    image: robustperception/azure_metrics_exporter:latest
+    container_name: azure
+    volumes:
+      - ${MOUNT_DIR}/monitoring/azure:/etc/azure
+      - azure-storage:/azure
+    command:
+      - '--config.file=/etc/azure/azure.yml'
+    ports:
+      - 9276:9276
+    restart: always
+
+volumes:
+  prometheus-storage:
+  alertmanager-storage:
+  blackbox-storage:
+  grafana-storage:
+  azure-storage:
+
