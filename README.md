@@ -37,7 +37,7 @@ Make sure your Azure resources have been created and applications are deployed.
 
 To generate the package automatically, please follow below steps:
 
-- Go to `templates/.env` file and fill it with required information related to monitoring host itself and information related to all the application hosts.
+- Go to [.env](templates/.env) file and fill it with required information related to monitoring host itself and information related to all the application hosts.
 - Run the bash script `./scripts/generate_skeleton.sh`
 - The package will be generated at folder `_package/monitoring`. (Please refer sample package)
 - Now, you can copy `monitoring` folder to remote monitoring host machine.
