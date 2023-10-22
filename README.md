@@ -1,23 +1,17 @@
-# Monitoring Architecture
+# Azure Monitoring Architecture
 
 ![design](attachments/design.png)
 
 In above architecture diagram, there are two parts:
-- `Application Host(s)` - This virtual machine has running dockerized application along with node-explorer (to expose system metrics), promtail (to ship/expose logs metrics) and cadvisor (to expose container metrics). The application along with virtual machine host has to be monitored by monitoring host.
-- `Monitoring Host`  - This virtual machine has monitoring prometheus server installed which gets metrics from application host(s) exposed by node-explorer, promtail and cadvistor etc and sends alerts to alertmanager based on prometheus rules.
-
-Note: Monitoring tools can be installed in same application host machine, however, if you have many application host machines, it better to have a dedicated machine for monitoring all hosts.
+- `Azure Cloud` - In Azure cloud, we have few Azure resources for example `Azure Front Door`, `Azure App Service`, `Azure Function`, `Azure SQLDB`, `Azure Redis Cache`, `Azure Virtual machine` etc. All these azure resources have to be monitored and Grafana dashboards should be able to show all configured metrics.
+- `Monitoring Host` - This Azure virtual machine has monitoring prometheus server installed which collects metrics from Azure Monitor API and sends alerts to alertmanager based on prometheus rules.
 
 ## Overview
-This tool automatically generates deployment package required for monitoring host which includes configuration related to prometheus, blackbox, node-explorer, windows-exporer, cadvisor, loki and grafana.
+This tool automatically generates deployment package required for monitoring Azure resources which includes configuration related to prometheus, blackbox, azure and grafana etc.
 
-### Services for Application Host(s)
+### Azure Cloud applications
 
-Please make sure below services are running on application host. (*The configuration and deployment of services related to application host is not covered in this document, however a docker-compose file can be used to install below services in application host machine*)
-
-* Application
-  * outputs log to file or console
-  * exposes at port 5000 (port can be anything)
+Make sure your Azure resources have been created and applications are deployed.
 
 ### Services for monitoring host
 

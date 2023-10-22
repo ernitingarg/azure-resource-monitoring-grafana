@@ -35,16 +35,6 @@ GENERAL_MANDATORY_PARAMS=(
 	"SLACK_CHANNEL_NAME"
 )
 
-BOOL_PARAMS=(
-	"PROBE_IS_HTTP"
-)
-
-HOST_MANDATORY_PARAMS=(
-	"IP_ADDRESS"
-	"RESOURCE_GROUP"
-	"RESOURCE_NAME"
-)
-
 WEB_MANDATORY_PARAMS=(
 	"URL"
 	"RESOURCE_GROUP"
@@ -52,8 +42,8 @@ WEB_MANDATORY_PARAMS=(
 )
 
 function validation() {
-	if [[ -z $HOST_COUNT && -z $WEB_COUNT ]] || [[ $HOST_COUNT -eq 0 && $WEB_COUNT -eq 0 ]]; then
-		echo "'HOST_COUNT' & 'WEB_COUNT' both parameters have value null or 0. Atleast one parameter is required to be configured."
+	if [[ -z $WEB_COUNT ]] || [[ $WEB_COUNT -eq 0 ]]; then
+		echo "'WEB_COUNT' parameter have value null or 0. Atleast WEB URL is required to be configured."
 		exit 1
 	fi
 
@@ -63,20 +53,6 @@ function validation() {
 			echo "For parameter '${param}', please assign the value."
 			HAS_ERROR=true
 		fi
-	done
-
-	index=0
-	while [ $index -le $((HOST_COUNT - 1)) ]; do
-		for param in "${HOST_MANDATORY_PARAMS[@]}"; do
-			HOST_PARAM=HOST${index}_${param}
-			if [[ -z ${!HOST_PARAM} ]]; then
-				echo "For parameter '${HOST_PARAM}', please assign the value."
-				HAS_ERROR=true
-			else
-				__validate_if_host_ip_address_has_correct_format $param $HOST_PARAM
-			fi
-		done
-		((index++))
 	done
 
 	index=0
@@ -90,8 +66,6 @@ function validation() {
 		done
 		((index++))
 	done
-
-	__validate_if_params_have_correct_bool_value "${BOOL_PARAMS[@]}"
 
 	[[ -z $TENANT_ID ]] && HAS_ERROR=true && echo "TENANT_ID is mandatory for Azure monitoring."
 	[[ -z $SUBSCRIPTION_ID ]] && HAS_ERROR=true && echo "SUBSCRIPTION_ID is mandatory for Azure monitoring."
@@ -185,25 +159,6 @@ __prepare_prometheus_file() {
 	TARGET_BLACKBOX_HTTP_PROBE_LIST=""  #[http_2xx -> http or https without ssl]
 
 	index=0
-	while [ $index -le $((HOST_COUNT - 1)) ]; do
-		IP_ADDRESS=HOST${index}_IP_ADDRESS
-		RESOURCE_GROUP=HOST${index}_RESOURCE_GROUP
-		RESOURCE_NAME=HOST${index}_RESOURCE_NAME
-
-		PORT=5000
-		if [[ "${PROBE_IS_HTTP}" == "true" ]]; then
-			TARGET_BLACKBOX_HTTP_PROBE=$(__target_template http://${!IP_ADDRESS}:$PORT ${!RESOURCE_GROUP,,} ${!RESOURCE_NAME,,})
-		else
-			TARGET_BLACKBOX_HTTPS_PROBE=$(__target_template https://${!IP_ADDRESS}:$PORT ${!RESOURCE_GROUP,,} ${!RESOURCE_NAME,,})
-		fi
-
-		TARGET_BLACKBOX_HTTP_PROBE_LIST+="${TARGET_BLACKBOX_HTTP_PROBE}${NEWLINE}"
-		TARGET_BLACKBOX_HTTPS_PROBE_LIST+="${TARGET_BLACKBOX_HTTPS_PROBE}${NEWLINE}"
-
-		((index++))
-	done
-
-	index=0
 	while [ $index -le $((WEB_COUNT - 1)) ]; do
 		URL=WEB${index}_URL
 		RESOURCE_GROUP=WEB${index}_RESOURCE_GROUP
@@ -222,29 +177,4 @@ __prepare_prometheus_file() {
 	PROJECT_NAME=${PROJECT_NAME,,} ENV=${ENV,,} MONITORING_RESOURCE_GROUP=${MONITORING_RESOURCE_GROUP,,} MONITORING_RESOURCE_NAME=${MONITORING_RESOURCE_NAME,,} TARGET_NODE_EXPORTER_LIST=$TARGET_NODE_EXPORTER_LIST TARGET_CADVISOR_LIST=$TARGET_CADVISOR_LIST TARGET_PROMTAIL_LIST=$TARGET_PROMTAIL_LIST TARGET_BLACKBOX_HTTPS_PROBE_LIST=$TARGET_BLACKBOX_HTTPS_PROBE_LIST TARGET_BLACKBOX_HTTP_PROBE_LIST=$TARGET_BLACKBOX_HTTP_PROBE_LIST BLACKBOX_PROBE_INTERVAL=$BLACKBOX_PROBE_INTERVAL envsubst <$PARENT_DIR/templates/prometheus/prometheus.yml >$PACKAGE_MONITORING_DIR/prometheus/prometheus.yml
 
 	sed -i 's/ *$// ; N;/^\n$/D;P;D;' $PACKAGE_MONITORING_DIR/prometheus/prometheus.yml
-}
-
-# validate if given list of params have correct bool value
-__validate_if_params_have_correct_bool_value() {
-	local param_list=("$@")
-
-	for param in "${param_list[@]}"; do
-		param_value=${!param}
-		if [[ -n $param_value ]] && [[ $param_value != true ]] && [[ $param_value != false ]]; then
-			echo "For parameter '${param}', please assign one of the value from true|false."
-			HAS_ERROR=true
-		fi
-	done
-}
-
-# for a given host param, check if it has valid ip address.
-__validate_if_host_ip_address_has_correct_format() {
-	local param=$1
-	local target_param=$2
-	target_value=${!target_param}
-
-	if [[ $param == "IP_ADDRESS" && ! $target_value =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-		echo "For parameter '${target_param}', the ip address is not in correct format."
-		HAS_ERROR=true
-	fi
 }

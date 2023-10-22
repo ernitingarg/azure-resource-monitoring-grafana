@@ -65,23 +65,11 @@ scrape_configs:
     params:
       module: [https_2xx] # Look for a HTTPS 200 response.
     static_configs:
-      - targets: ['https://1.0.0.5:5000']
-        labels:
-          target_env: 'sample_project'
-          target_resource_group: 'sample_rg'
-          target_resource_name: 'sample_app'
-
       - targets: ['https://sample_api.com/healthcheck']
         labels:
           target_env: 'sample_project'
           target_resource_group: 'sample_rg'
           target_resource_name: 'sample_api'
-
-      - targets: ['https://sample_frontdoor.com/healthcheck']
-        labels:
-          target_env: 'sample_project'
-          target_resource_group: 'sample_rg'
-          target_resource_name: 'sample_frontdoor'
 
     relabel_configs:
       - source_labels: [__address__]
@@ -98,6 +86,11 @@ scrape_configs:
     params:
       module: [http_2xx] # Look for a HTTP 200 response.
     static_configs:
+      - targets: ['http://sample_frontdoor.com/healthcheck']
+        labels:
+          target_env: 'sample_project'
+          target_resource_group: 'sample_rg'
+          target_resource_name: 'sample_frontdoor'
 
     relabel_configs:
       - source_labels: [__address__]
